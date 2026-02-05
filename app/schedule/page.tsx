@@ -17,10 +17,12 @@ export default function Calendar() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [noteContent, setNoteContent] = useState("");
 
-  // Real-time query for schedules
-  const { isLoading, error, data } = db.useQuery({ schedules: {} });
+  // Real-time query for schedules and notes
+  const { isLoading, error, data } = db.useQuery({ schedules: {}, notes: {} });
   const schedules = data?.schedules || [];
+  const notes = data?.notes || [];
 
   const showNotification = (
     message: string,
@@ -107,6 +109,37 @@ export default function Calendar() {
         showNotification("Failed to remove appointment", "error");
       }
     });
+  };
+
+  const handleAddNote = async () => {
+    if (!noteContent.trim()) {
+      showNotification("Please enter a note", "warning");
+      return;
+    }
+
+    try {
+      await db.transact([
+        tx.notes[id()].update({
+          content: noteContent.trim(),
+          createdAt: new Date(),
+        }),
+      ]);
+      setNoteContent("");
+      showNotification("Note added!", "success");
+    } catch (error) {
+      console.error("Failed to add note:", error);
+      showNotification("Failed to add note", "error");
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      await db.transact([tx.notes[noteId].delete()]);
+      showNotification("Note deleted!", "success");
+    } catch (error) {
+      console.error("Failed to delete note:", error);
+      showNotification("Failed to delete note", "error");
+    }
   };
 
   // Convert scheduled dates to Date objects for disabling
@@ -341,6 +374,86 @@ export default function Calendar() {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Owner Notice Section */}
+            <div className="bg-stone-900/60 backdrop-blur-sm rounded-lg shadow-2xl p-8 border border-stone-700/50 mt-8">
+              <h2
+                className="text-2xl font-medium text-stone-300 mb-6 tracking-wide"
+                style={{ fontFamily: "'EB Garamond', serif" }}
+              >
+                Owner Notice
+              </h2>
+              <div className="space-y-4">
+                {/* Add Note Input */}
+                <div className="flex gap-2">
+                  <textarea
+                    value={noteContent}
+                    onChange={(e) => setNoteContent(e.target.value)}
+                    placeholder="Add a note for scheduling..."
+                    className="flex-1 bg-stone-950/50 border border-stone-700/50 rounded-lg p-3 text-stone-200 placeholder-stone-600 focus:outline-none focus:ring-1 focus:ring-stone-600 focus:border-transparent transition"
+                    style={{ fontFamily: "'Crimson Text', serif" }}
+                    rows={2}
+                  />
+                  <button
+                    onClick={handleAddNote}
+                    className="bg-stone-700 text-stone-200 px-6 py-2 rounded-lg font-medium hover:bg-stone-600 transition shadow-lg"
+                    style={{ fontFamily: "'EB Garamond', serif" }}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* Notes List */}
+                {notes.length > 0 ? (
+                  <ul className="space-y-3 max-h-[300px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-stone-700/50 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-track]:bg-stone-900/50">
+                    {notes
+                      .sort(
+                        (a, b) =>
+                          new Date(b.createdAt).getTime() -
+                          new Date(a.createdAt).getTime()
+                      )
+                      .map((note) => (
+                        <li
+                          key={note.id}
+                          className="bg-stone-950/50 p-4 rounded-lg border border-stone-700/30 hover:border-stone-600/50 transition"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <p className="text-sm text-stone-300 leading-relaxed">
+                                {note.content}
+                              </p>
+                              <p className="text-xs text-stone-500 mt-2">
+                                {new Date(note.createdAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteNote(note.id)}
+                              className="bg-stone-800 text-stone-400 px-3 py-1 rounded text-xs font-medium hover:bg-stone-700 hover:text-stone-300 transition"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-stone-500 italic text-sm">
+                      No notes yet
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

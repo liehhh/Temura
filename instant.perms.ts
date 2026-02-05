@@ -11,6 +11,14 @@ const rules = {
       delete: "true",
     },
   },
+  notes: {
+    allow: {
+      view: "true",
+      create: "true",
+      update: "true",
+      delete: "true",
+    },
+  },
 } satisfies InstantRules;
 
 export default rules;

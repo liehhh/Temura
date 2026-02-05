@@ -18,6 +18,10 @@ const _schema = i.schema({
       description: i.string(),
       createdAt: i.date(),
     }),
+    notes: i.entity({
+      content: i.string(),
+      createdAt: i.date(),
+    }),
   },
   links: {
     $usersLinkedPrimaryUser: {
