@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { db } from "@/lib/db";
@@ -14,6 +14,12 @@ interface Notification {
 }
 
 export default function Calendar() {
+  // Initialize EmailJS
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY) {
+      emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY);
+    }
+  }, []);
   const [selected, setSelected] = useState<Date | undefined>();
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -98,18 +104,21 @@ export default function Calendar() {
           day: "numeric",
         });
 
-        await emailjs.send(
+        const result = await emailjs.send(
           process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "",
           process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "",
           {
             meeting_date: formattedDate,
             description: description.trim(),
-          },
-          process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ""
+          }
         );
+        console.log("Email sent successfully:", result);
       } catch (emailError) {
         console.error("Failed to send email:", emailError);
-        // Don't fail the whole operation if email fails
+        showNotification(
+          "Appointment saved, but email notification failed",
+          "warning"
+        );
       }
 
       setSelected(undefined);
