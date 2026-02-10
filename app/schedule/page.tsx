@@ -108,9 +108,9 @@ export default function Calendar() {
           "beka.natchkebia.1@btu.edu.ge",
           "davit.asanidze.1@btu.edu.ge",
           "luka.tvauri.1@btu.edu.ge",
-          "temur.botchoridze.1@btu.edu.ge",
+          "temuri.botchoridze.1@btu.edu.ge",
           "sandro.gelashvili.2@btu.edu.ge",
-          "otar.qotolashvili.1@btu.edu.ge",
+          "otar.kotolashvili.1@btu.edu.ge",
         ];
 
         // Send individual email to each recipient
