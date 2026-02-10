@@ -88,6 +88,23 @@ export default function Calendar() {
         }),
       ]);
 
+      // Send email notification
+      try {
+        await fetch("/api/send-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            date: selected,
+            description: description.trim(),
+          }),
+        });
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
       setSelected(undefined);
       setDescription("");
       showNotification("Appointment scheduled successfully!", "success");
