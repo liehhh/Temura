@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await resend.emails.send({
       from: "onboarding@resend.dev", // Change this to your verified domain
-      to: ["beka.natchkebia.1@btu.edu.ge"],
+      to: ["beka.natchkebia.1@btu.edu.ge", "davit.asanidze.1@btu.edu.ge", "luka.tvauri.1@btu.edu.ge", "temur.botchoridze.1@btu.edu.ge", "sandro.gelashvili.2@btu.edu.ge", "otar.qotolashvili.1@btu.edu.ge"],
       subject: "New Meeting Scheduled",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
