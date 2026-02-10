@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if API key is configured
-    if (!process.env.RESEND_API_KEY) {
-      console.warn("RESEND_API_KEY not configured - skipping email send");
+    // Check if Gmail credentials are configured
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.warn("Gmail credentials not configured - skipping email send");
       return NextResponse.json(
         { error: "Email service not configured" },
         { status: 503 }
       );
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
     const { date, description } = await request.json();
 
     if (!date || !description) {
@@ -38,8 +37,18 @@ export async function POST(request: NextRequest) {
       "otar.qotolashvili.1@btu.edu.ge"
     ];
 
-    const emailTemplate = {
-      from: "onboarding@resend.dev",
+    // Create Gmail transporter
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: recipients.join(", "),
       subject: "New Meeting Scheduled",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -52,29 +61,11 @@ export async function POST(request: NextRequest) {
       `,
     };
 
-    // Send individual emails to each recipient
-    const results = await Promise.allSettled(
-      recipients.map((recipient) =>
-        resend.emails.send({
-          ...emailTemplate,
-          to: [recipient],
-        })
-      )
-    );
-
-    // Check for any failures
-    const failures = results.filter((r) => r.status === "rejected");
-    if (failures.length > 0) {
-      console.error("Some emails failed:", failures);
-    }
-
-    const successes = results.filter((r) => r.status === "fulfilled");
+    await transporter.sendMail(mailOptions);
     
     return NextResponse.json({
       success: true,
-      sent: successes.length,
-      failed: failures.length,
-      total: recipients.length,
+      sent: recipients.length,
     });
   } catch (error) {
     console.error("Email sending failed:", error);

@@ -4,6 +4,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { db } from "@/lib/db";
 import { id, tx } from "@instantdb/react";
+import emailjs from "@emailjs/browser";
 
 interface Notification {
   id: number;
@@ -88,18 +89,24 @@ export default function Calendar() {
         }),
       ]);
 
-      // Send email notification
+      // Send email notification using EmailJS
       try {
-        await fetch("/api/send-email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            date: selected,
-            description: description.trim(),
-          }),
+        const formattedDate = selected.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
         });
+
+        await emailjs.send(
+          process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "",
+          process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "",
+          {
+            meeting_date: formattedDate,
+            description: description.trim(),
+          },
+          process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ""
+        );
       } catch (emailError) {
         console.error("Failed to send email:", emailError);
         // Don't fail the whole operation if email fails
