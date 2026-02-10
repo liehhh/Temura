@@ -104,15 +104,35 @@ export default function Calendar() {
           day: "numeric",
         });
 
-        const result = await emailjs.send(
-          process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "",
-          process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "",
-          {
-            meeting_date: formattedDate,
-            description: description.trim(),
-          }
+        const recipients = [
+          "beka.natchkebia.1@btu.edu.ge",
+          "davit.asanidze.1@btu.edu.ge",
+          "luka.tvauri.1@btu.edu.ge",
+          "temur.botchoridze.1@btu.edu.ge",
+          "sandro.gelashvili.2@btu.edu.ge",
+          "otar.qotolashvili.1@btu.edu.ge",
+        ];
+
+        // Send individual email to each recipient
+        const emailPromises = recipients.map((email) =>
+          emailjs.send(
+            process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "",
+            process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "",
+            {
+              to_email: email,
+              meeting_date: formattedDate,
+              description: description.trim(),
+            }
+          )
         );
-        console.log("Email sent successfully:", result);
+
+        const results = await Promise.allSettled(emailPromises);
+        const successful = results.filter(
+          (r) => r.status === "fulfilled"
+        ).length;
+        console.log(
+          `Emails sent successfully: ${successful}/${recipients.length}`
+        );
       } catch (emailError) {
         console.error("Failed to send email:", emailError);
         showNotification(
