@@ -29,9 +29,17 @@ export async function POST(request: NextRequest) {
       day: "numeric",
     });
 
-    const { data, error } = await resend.emails.send({
-      from: "onboarding@resend.dev", // Change this to your verified domain
-      to: ["beka.natchkebia.1@btu.edu.ge", "davit.asanidze.1@btu.edu.ge", "luka.tvauri.1@btu.edu.ge", "temur.botchoridze.1@btu.edu.ge", "sandro.gelashvili.2@btu.edu.ge", "otar.qotolashvili.1@btu.edu.ge"],
+    const recipients = [
+      "beka.natchkebia.1@btu.edu.ge",
+      "davit.asanidze.1@btu.edu.ge",
+      "luka.tvauri.1@btu.edu.ge",
+      "temur.botchoridze.1@btu.edu.ge",
+      "sandro.gelashvili.2@btu.edu.ge",
+      "otar.qotolashvili.1@btu.edu.ge"
+    ];
+
+    const emailTemplate = {
+      from: "onboarding@resend.dev",
       subject: "New Meeting Scheduled",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -42,14 +50,32 @@ export async function POST(request: NextRequest) {
           <p style="color: #666; font-size: 14px;">This is an automated notification from Temura Appointments.</p>
         </div>
       `,
-    });
+    };
 
-    if (error) {
-      console.error("Resend error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Send individual emails to each recipient
+    const results = await Promise.allSettled(
+      recipients.map((recipient) =>
+        resend.emails.send({
+          ...emailTemplate,
+          to: [recipient],
+        })
+      )
+    );
+
+    // Check for any failures
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      console.error("Some emails failed:", failures);
     }
 
-    return NextResponse.json({ success: true, data });
+    const successes = results.filter((r) => r.status === "fulfilled");
+    
+    return NextResponse.json({
+      success: true,
+      sent: successes.length,
+      failed: failures.length,
+      total: recipients.length,
+    });
   } catch (error) {
     console.error("Email sending failed:", error);
     return NextResponse.json(
